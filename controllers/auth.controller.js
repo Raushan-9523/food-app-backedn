@@ -46,7 +46,7 @@ const login = async (req, res) => {
         message: "Please provide email or Password",
       });
     }
-    const userResult = await User.findOne({ email });
+    const userResult = await User.findOne({ email, password });
 
     if (!userResult) {
       return res
@@ -54,7 +54,9 @@ const login = async (req, res) => {
         .send({ success: false, message: "User Name not found" });
     }
 
-    res.status(200).send({});
+    res
+      .status(200)
+      .send({ success: true, message: "login successfully", data: userResult });
   } catch (err) {
     return res.status(500).send({
       success: false,
