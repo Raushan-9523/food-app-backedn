@@ -1,4 +1,6 @@
 const User = require("../models/user");
+const bcryptjs = require("bcryptjs");
+
 const register = async (req, res) => {
   try {
     const { userName, email, password, address, phone, userType, profile } =
@@ -19,16 +21,19 @@ const register = async (req, res) => {
         message: "Email already registered , please login",
       });
     }
-
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(password, salt);
     const user = await User.create({
       userName,
       email,
-      password,
+      password: hashedPassword,
       address,
       phone,
     });
 
-    res.status(201).send({ success: true, message: "Successfully Registered" });
+    res
+      .status(201)
+      .send({ success: true, message: "Successfully Registered", data: user });
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -46,7 +51,7 @@ const login = async (req, res) => {
         message: "Please provide email or Password",
       });
     }
-    const userResult = await User.findOne({ email, password });
+    const userResult = await User.findOne({ email });
 
     if (!userResult) {
       return res
@@ -54,6 +59,17 @@ const login = async (req, res) => {
         .send({ success: false, message: "User Name not found" });
     }
 
+    const isMatchPassword = await bcryptjs.compare(
+      password,
+      userResult.password
+    );
+
+    if (!isMatchPassword) {
+      return res.status(500).send({
+        success: false,
+        message: "User found but password not matched,enter correct password",
+      });
+    }
     res
       .status(200)
       .send({ success: true, message: "login successfully", data: userResult });
